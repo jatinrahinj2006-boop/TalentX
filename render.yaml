@@ -1,0 +1,27 @@
+services:
+  # Backend API Web Service
+  - type: web
+    name: talentx-api
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn apps.api.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: UPLOAD_DIR
+        value: data/uploads
+
+  # Frontend Next.js Web Service
+  - type: web
+    name: talentx-web
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: apps/web
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
