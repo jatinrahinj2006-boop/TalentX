@@ -19,8 +19,10 @@ from packages.agents.recruiter_agent import generate_recruiter_summary
 
 def _validate_resume(resume: ExtractedResume) -> bool:
     """Ensure resume has the minimum required fields with evidence."""
-    if not resume.candidate_id or not resume.skills:
+    if not resume.candidate_id:
         return False
+    if not resume.skills:
+        print(f"[Orchestrator] NOTICE: Resume {resume.candidate_id} has 0 detected skills; will be scored accordingly.")
     if any(not s.evidence_span for s in resume.skills):
         print(f"[Orchestrator] WARNING: Resume {resume.candidate_id} has skills missing evidence_span.")
     return True
@@ -68,6 +70,12 @@ def run_pipeline_for_candidate(
             # Step 5: Recruiter summary
             match.recruiter_summary = generate_recruiter_summary(match)
 
+            # Attach candidate metadata for HR view
+            match.candidate_name = resume.name or candidate_id
+            match.candidate_email = resume.email
+            match.candidate_phone = resume.phone
+            match.resume_file = os.path.basename(resume_path)
+
             return match
 
         except Exception as e:
@@ -100,11 +108,11 @@ def run_screening_pipeline(
 
     for job in jobs:
         job_results: List[MatchResult] = []
-        print(f"\n[Orchestrator] Processing job: {job.job_id} — {job.title}")
+        print(f"\n[Orchestrator] Processing job: {job.job_id} - {job.title}")
 
         for i, resume_path in enumerate(resume_file_paths):
             candidate_id = f"C{i+1:03d}"
-            print(f"  → Matching candidate {candidate_id} ({os.path.basename(resume_path)})...")
+            print(f"  -> Matching candidate {candidate_id} ({os.path.basename(resume_path)})...")
             result = run_pipeline_for_candidate(resume_path, job, candidate_id)
             if result:
                 job_results.append(result)
@@ -115,6 +123,6 @@ def run_screening_pipeline(
             r.rank = rank
 
         results[job.job_id] = job_results
-        print(f"  ✓ Ranked {len(job_results)} candidates for {job.job_id}")
+        print(f"  [OK] Ranked {len(job_results)} candidates for {job.job_id}")
 
     return results

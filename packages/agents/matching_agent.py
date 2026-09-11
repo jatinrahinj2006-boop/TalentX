@@ -148,8 +148,22 @@ def match_candidate_to_job(
     edu_score = _education_score(resume, job)
     exp_months = _total_experience_months(resume)
 
-    project_rel = 0.8 if resume.projects else 0.5
-    cert_rel = min(1.0, 0.5 + len(resume.certifications) * 0.25)
+    # ── Certifications & Project relevance ──────────────
+    def _compute_relevance(cand_items: List[str], job_reqs: List[str]) -> float:
+        if not job_reqs:
+            return 1.0  # If job doesn't require any, don't penalize
+        if not cand_items:
+            return 0.3
+        
+        cand_text = " ".join(cand_items).lower()
+        match_count = sum(1 for req in job_reqs if req.lower() in cand_text)
+        return min(1.0, 0.4 + (match_count / len(job_reqs)) * 0.6)
+
+    cand_certs = [c.name for c in resume.certifications]
+    cert_rel = _compute_relevance(cand_certs, job.certifications)
+
+    cand_projects = [p.name + " " + p.description for p in resume.projects]
+    project_rel = _compute_relevance(cand_projects, job.preferred_qualifications + job.other_requirements)
 
     # ── Call deterministic scorer (no LLM) ─────────────────────────────────
     score_result = score_candidate(

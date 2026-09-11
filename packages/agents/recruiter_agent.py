@@ -12,7 +12,7 @@ import json
 from typing import Optional
 from packages.schemas.match import MatchResult
 from packages.schemas.evidence import EvidenceItem
-from packages.agents.llm_client import generate_structured
+from packages.agents.llm_client import _call_nvidia_nim, _call_groq, _call_gemini
 
 def _build_evidence_list(match: MatchResult) -> list[EvidenceItem]:
     """Extract evidence items from skill_matches that have evidence spans."""
@@ -88,7 +88,7 @@ def _heuristic_summary(match: MatchResult) -> str:
 def generate_recruiter_summary(match: MatchResult) -> str:
     """
     Generates recruiter summary from structured MatchResult only.
-    Attempts LLM generation first, falls back to heuristic.
+    Attempts LLM generation first (NVIDIA NIM / Groq / Gemini), falls back to heuristic.
     """
     # Populate evidence list if empty
     if not match.evidence_list:
@@ -127,28 +127,17 @@ Write a 3-5 sentence recruiter summary:
 Return ONLY plain text (no JSON).
 """
 
-    # Try LLM
-    groq_key = os.environ.get("GROQ_API_KEY")
-    gemini_key = os.environ.get("GEMINI_API_KEY")
+    try:
+        # Try NVIDIA NIM first (fast Llama 3.3 70B)
+        response = _call_nvidia_nim(prompt)
+        if not response:
+            response = _call_groq(prompt)
+        if not response:
+            response = _call_gemini(prompt)
 
-    if groq_key or gemini_key:
-        try:
-            import urllib.request
-            if groq_key:
-                req = urllib.request.Request(
-                    "https://api.groq.com/openai/v1/chat/completions",
-                    headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
-                    data=json.dumps({
-                        "model": "llama-3.3-70b-versatile",
-                        "messages": [{"role": "user", "content": prompt}],
-                        "temperature": 0.3,
-                        "max_tokens": 300,
-                    }).encode()
-                )
-                with urllib.request.urlopen(req, timeout=15) as resp:
-                    data = json.loads(resp.read())
-                    return data["choices"][0]["message"]["content"].strip()
-        except Exception as e:
-            print(f"[Recruiter Agent] LLM call failed: {e}, using heuristic summary.")
+        if response and len(response.strip()) > 20:
+            return response.strip()
+    except Exception as e:
+        print(f"[Recruiter Agent] LLM generation error: {e}")
 
     return _heuristic_summary(match)

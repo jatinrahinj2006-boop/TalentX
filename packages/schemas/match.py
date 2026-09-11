@@ -32,6 +32,10 @@ class MatchResult(BaseModel):
     match_id: str
     candidate_id: str
     job_id: str
+    candidate_name: Optional[str] = None
+    candidate_email: Optional[str] = None
+    candidate_phone: Optional[str] = None
+    resume_file: Optional[str] = None
     overall_score: float = Field(..., ge=0.0, le=100.0)
     score_breakdown: ScoreBreakdown
     skill_matches: List[SkillMatch] = Field(default_factory=list)

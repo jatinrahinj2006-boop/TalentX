@@ -66,10 +66,10 @@ export default function Dashboard() {
                       Autonomous Orchestration Pipeline • Agent Mesh Active
                     </div>
                     <h1 style={{ fontSize: 26, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.03em", lineHeight: 1.2 }}>
-                      Active Job Requisitions
+                      Batch Results
                     </h1>
                     <p style={{ fontSize: 13, color: "#475569", marginTop: 4 }}>
-                      Evidence-grounded multi-agent candidate screening across all active requisitions.
+                      Evidence-grounded multi-agent candidate screening across all active batches.
                     </p>
                   </div>
 
@@ -82,13 +82,9 @@ export default function Dashboard() {
                       <span className="material-symbols-outlined" style={{ fontSize: 14 }}>dataset</span>
                       {seeding ? "Loading Demo..." : "Load Demo Batch"}
                     </button>
-                    <Link href="/jobs/new" className="btn btn-sm">
+                    <Link href="/batches/new" className="btn btn-primary btn-sm">
                       <span className="material-symbols-outlined" style={{ fontSize: 14 }}>add</span>
-                      Post New Requisition
-                    </Link>
-                    <Link href="/resumes/upload" className="btn btn-primary btn-sm">
-                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>cloud_upload</span>
-                      Upload Resumes
+                      Create Batch Evaluation
                     </Link>
                   </div>
                 </div>
@@ -144,7 +140,7 @@ export default function Dashboard() {
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <h2 style={{ fontSize: 16, fontWeight: 800, color: "#0f172a" }}>Requisition Overview</h2>
+                  <h2 style={{ fontSize: 16, fontWeight: 800, color: "#0f172a" }}>Batch Overview</h2>
                   <span className="badge badge-green">
                     {jobs.length} Active Position{jobs.length !== 1 ? "s" : ""}
                   </span>
@@ -159,7 +155,7 @@ export default function Dashboard() {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Requisition</th>
+                        <th>Batch Name</th>
                         <th>Domain</th>
                         <th>Candidates Screened</th>
                         <th>Top Match</th>
@@ -184,12 +180,12 @@ export default function Dashboard() {
               ) : jobs.length === 0 ? (
                 <div className="card" style={{ textAlign: "center", padding: "64px 24px" }}>
                   <span className="material-symbols-outlined" style={{ fontSize: 36, color: "#94a3b8", display: "block", marginBottom: 12 }}>work_off</span>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>No Active Requisitions</h3>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>No Active Batches</h3>
                   <p style={{ fontSize: 13, color: "#475569", marginBottom: 20, maxWidth: 400, margin: "0 auto 20px" }}>
-                    No job positions loaded. Post a requisition or load the demo benchmark batch to begin.
+                    No batches evaluated yet. Create a batch evaluation or load the demo benchmark batch to begin.
                   </p>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-                    <Link href="/jobs/new" className="btn btn-primary btn-sm">Post Requisition</Link>
+                    <Link href="/batches/new" className="btn btn-primary btn-sm">Create Batch Evaluation</Link>
                     <button onClick={runSeed} disabled={seeding} className="btn btn-sm">{seeding ? "Loading..." : "Load Demo Batch"}</button>
                   </div>
                 </div>
@@ -198,7 +194,7 @@ export default function Dashboard() {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Requisition ID & Title</th>
+                        <th>Batch Name</th>
                         <th>Domain</th>
                         <th>Candidates Screened</th>
                         <th>Top Match Score</th>
@@ -209,7 +205,7 @@ export default function Dashboard() {
                     <tbody>
                       {jobs.map((job: any) => {
                         const count = job.candidate_count || 0;
-                        const topScore = job.top_score || job.top_match_percent || 0;
+                        const topScore = Math.round(job.top_score || job.top_match_percent || 0);
                         const tier = topScore >= 80 ? "strong" : topScore >= 60 ? "moderate" : "weak";
                         const tierLabel = topScore >= 80 ? "Strong" : topScore >= 60 ? "Moderate" : "Weak";
                         const date = job.created_at
@@ -221,7 +217,7 @@ export default function Dashboard() {
                             <td>
                               <div style={{ fontWeight: 700, fontSize: 13, color: "#0f172a" }}>{job.title}</div>
                               <div className="font-mono" style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
-                                REQ-{job.job_id?.slice(-3)?.toUpperCase() || "000"}
+                                BATCH-{job.job_id?.slice(-3)?.toUpperCase() || "000"}
                               </div>
                             </td>
                             <td>

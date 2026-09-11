@@ -36,6 +36,8 @@ class CertificationEntry(BaseModel):
 class ExtractedResume(BaseModel):
     candidate_id: str = Field(..., description="Unique candidate ID (e.g., C001)")
     name: str = Field(..., description="Candidate full name (kept separate from scoring)")
+    email: Optional[str] = Field(None, description="Candidate email address")
+    phone: Optional[str] = Field(None, description="Candidate phone / contact number")
     education: List[EducationEntry] = Field(default_factory=list)
     experience: List[ExperienceEntry] = Field(default_factory=list)
     skills: List[ExtractedSkill] = Field(default_factory=list)

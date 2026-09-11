@@ -51,9 +51,11 @@ def _get_groq_keys() -> List[str]:
 _nvidia_counter = 0
 _groq_counter = 0
 
+_dead_keys = set()
+
 def _call_nvidia_nim(prompt: str) -> Optional[str]:
     global _nvidia_counter
-    keys = _get_nvidia_keys()
+    keys = [k for k in _get_nvidia_keys() if k not in _dead_keys]
     if not keys:
         return None
     
@@ -66,6 +68,8 @@ def _call_nvidia_nim(prompt: str) -> Optional[str]:
     # Try all keys in pool starting from index
     for i in range(len(keys)):
         key = keys[(start_idx + i) % len(keys)]
+        if key in _dead_keys:
+            continue
         try:
             import urllib.request
             req = urllib.request.Request(
@@ -82,20 +86,23 @@ def _call_nvidia_nim(prompt: str) -> Optional[str]:
                     "max_tokens": 2048
                 }).encode("utf-8")
             )
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 content = data["choices"][0]["message"]["content"]
                 if content:
                     print(f"[LLM Client] Successfully responded via NVIDIA NIM key #{(start_idx + i) % len(keys) + 1}")
                     return content
         except Exception as e:
+            err_str = str(e)
+            if any(code in err_str for code in ["401", "403", "410"]):
+                _dead_keys.add(key)
             print(f"[LLM Client] NVIDIA NIM key #{(start_idx + i) % len(keys) + 1} call failed: {e}")
             continue
     return None
 
 def _call_groq(prompt: str) -> Optional[str]:
     global _groq_counter
-    keys = _get_groq_keys()
+    keys = [k for k in _get_groq_keys() if k not in _dead_keys]
     if not keys:
         return None
 
@@ -106,6 +113,8 @@ def _call_groq(prompt: str) -> Optional[str]:
 
     for i in range(len(keys)):
         key = keys[(start_idx + i) % len(keys)]
+        if key in _dead_keys:
+            continue
         try:
             import urllib.request
             req = urllib.request.Request(
@@ -121,13 +130,16 @@ def _call_groq(prompt: str) -> Optional[str]:
                     "temperature": 0.1,
                 }).encode("utf-8")
             )
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 content = data["choices"][0]["message"]["content"]
                 if content:
                     print(f"[LLM Client] Successfully responded via Groq key #{(start_idx + i) % len(keys) + 1}")
                     return content
         except Exception as e:
+            err_str = str(e)
+            if any(code in err_str for code in ["401", "403", "410"]):
+                _dead_keys.add(key)
             print(f"[LLM Client] Groq key #{(start_idx + i) % len(keys) + 1} call failed: {e}")
             continue
     return None

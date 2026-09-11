@@ -72,7 +72,7 @@ export default function RankedCandidatesPage() {
                     <div className="skeleton" style={{ height: 32, width: 340, borderRadius: 6 }} />
                   ) : (
                     <h1 style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.03em" }}>
-                      {job?.title || "Job Requisition"}
+                      Batch Results for {job?.title || "Unnamed Batch"}
                     </h1>
                   )}
                   <p style={{ fontSize: 13, color: "#475569", marginTop: 4 }}>
@@ -153,7 +153,7 @@ export default function RankedCandidatesPage() {
                 {/* Controls bar */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <h2 style={{ fontSize: 16, fontWeight: 800, color: "#0f172a" }}>Candidate Bench</h2>
+                    <h2 style={{ fontSize: 16, fontWeight: 800, color: "#0f172a" }}>Evaluated Candidates</h2>
                     <span className="badge badge-green">Top {candidates.length} Ranked by TalentX Matrix</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -201,9 +201,9 @@ export default function RankedCandidatesPage() {
                     <span className="material-symbols-outlined" style={{ fontSize: 36, color: "#94a3b8", display: "block", marginBottom: 12 }}>group_off</span>
                     <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>No Candidates Screened</h3>
                     <p style={{ fontSize: 13, color: "#475569", maxWidth: 360, margin: "0 auto 20px" }}>
-                      Run the multi-agent screening pipeline to generate candidate match scores for this requisition.
+                      Run the multi-agent screening pipeline to generate candidate match scores for this batch.
                     </p>
-                    <Link href="/resumes/upload" className="btn btn-primary btn-sm">Upload Resumes for Screening</Link>
+                    <Link href="/batches/new" className="btn btn-primary btn-sm">Upload Resumes for Screening</Link>
                   </div>
                 )}
 
@@ -244,22 +244,46 @@ export default function RankedCandidatesPage() {
                             </span>
                           </div>
 
-                          <div>
-                            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                            <div>
+                            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 6 }}>
                               <Link
                                 href={`/jobs/${jobId}/candidates/${c.candidate_id}${maskPii ? "?mask_pii=true" : ""}`}
-                                className="font-mono"
-                                style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}
+                                style={{ fontSize: 16, fontWeight: 800, color: "#0f172a" }}
                               >
-                                {c.candidate_id}
+                                {c.candidate_name || c.candidate_id}
                               </Link>
+                              <span className="font-mono" style={{ fontSize: 11, background: "#f1f5f9", padding: "2px 6px", borderRadius: 4, color: "#64748b", border: "1px solid #e2e8f0" }}>
+                                {c.candidate_id}
+                              </span>
+                              {c.resume_file && (
+                                <span style={{ fontSize: 11, color: "#0a66c2", background: "#eff6ff", border: "1px solid #bfdbfe", padding: "2px 8px", borderRadius: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                                  <span className="material-symbols-outlined" style={{ fontSize: 13 }}>description</span>
+                                  {c.resume_file}
+                                </span>
+                              )}
                               <span className={`badge ${st.badgeCls}`}>{c.overall_score}% {st.label}</span>
                               {highGaps.length === 0 && <span className="badge badge-green">Zero Critical Gaps</span>}
                               {highGaps.length > 0 && <span className="badge badge-red">{highGaps.length} Critical Gap{highGaps.length > 1 ? "s" : ""}</span>}
                             </div>
-                            <p style={{ fontSize: 11, color: "#475569" }}>
-                              {c.experience_years ? `${c.experience_years} yrs experience` : "Parsed from Resume"} • Agent Score: {c.overall_score}%
-                            </p>
+
+                            {/* Contact Details Row */}
+                            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14, fontSize: 12, color: "#475569", marginTop: 4 }}>
+                              {c.candidate_email && (
+                                <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#0f172a" }}>
+                                  <span className="material-symbols-outlined" style={{ fontSize: 14, color: "#0a66c2" }}>mail</span>
+                                  {c.candidate_email}
+                                </span>
+                              )}
+                              {c.candidate_phone && (
+                                <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#0f172a" }}>
+                                  <span className="material-symbols-outlined" style={{ fontSize: 14, color: "#0d9488" }}>call</span>
+                                  {c.candidate_phone}
+                                </span>
+                              )}
+                              <span style={{ fontSize: 11, color: "#64748b" }}>
+                                {c.experience_years ? `${c.experience_years} yrs exp` : "Evaluated"} • Composite Score: <strong style={{ color: "#0f172a" }}>{c.overall_score}%</strong>
+                              </span>
+                            </div>
                           </div>
                         </div>
 
@@ -353,13 +377,14 @@ export default function RankedCandidatesPage() {
                         <span className="material-symbols-outlined" style={{ fontSize: 18, color: "#0d9488" }}>format_list_numbered</span>
                         <h3 style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Evaluated Pool: Ranks #{topCandidates.length + 1} through #{candidates.length}</h3>
                       </div>
-                      <span style={{ fontSize: 11, color: "#64748b" }}>Score Threshold: <strong className="font-mono">≥50%</strong></span>
+                      <span style={{ fontSize: 11, color: "#64748b" }}>Ranked by composite score</span>
                     </div>
                     <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden" }}>
                       <table className="data-table">
                         <thead>
                           <tr>
                             <th>Rank & Candidate</th>
+                            <th>Contact Info</th>
                             <th>Compatibility</th>
                             <th>Cosine Sim</th>
                             <th>Primary Gap</th>
@@ -372,9 +397,23 @@ export default function RankedCandidatesPage() {
                             return (
                               <tr key={c.candidate_id} className="row-hover">
                                 <td>
-                                  <span className="font-mono" style={{ fontWeight: 700, color: "#0f172a" }}>
-                                    #{c.rank} {c.candidate_id}
-                                  </span>
+                                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                      <span className="font-mono" style={{ fontWeight: 800, color: "#0a66c2", fontSize: 12 }}>#{c.rank}</span>
+                                      <span style={{ fontWeight: 700, color: "#0f172a" }}>{c.candidate_name || c.candidate_id}</span>
+                                      <span className="font-mono" style={{ fontSize: 10, background: "#f1f5f9", padding: "1px 4px", borderRadius: 3, color: "#64748b" }}>{c.candidate_id}</span>
+                                    </div>
+                                    {c.resume_file && (
+                                      <span style={{ fontSize: 11, color: "#64748b" }}>{c.resume_file}</span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td>
+                                  <div style={{ fontSize: 11, color: "#475569", display: "flex", flexDirection: "column", gap: 2 }}>
+                                    {c.candidate_email && <span>{c.candidate_email}</span>}
+                                    {c.candidate_phone && <span>{c.candidate_phone}</span>}
+                                    {!c.candidate_email && !c.candidate_phone && <span style={{ color: "#94a3b8" }}>—</span>}
+                                  </div>
                                 </td>
                                 <td>
                                   <span className="font-mono" style={{ fontWeight: 700, color: "#475569" }}>{c.overall_score}%</span>
@@ -386,7 +425,7 @@ export default function RankedCandidatesPage() {
                                   {highGaps[0]?.skill_name || "No critical gaps"}
                                 </td>
                                 <td style={{ textAlign: "right" }}>
-                                  <Link href={`/jobs/${jobId}/candidates/${c.candidate_id}`} style={{ color: "#0a66c2", fontWeight: 700, fontSize: 12 }}>
+                                  <Link href={`/jobs/${jobId}/candidates/${c.candidate_id}${maskPii ? "?mask_pii=true" : ""}`} style={{ color: "#0a66c2", fontWeight: 700, fontSize: 12 }}>
                                     Inspect
                                   </Link>
                                 </td>
@@ -398,6 +437,7 @@ export default function RankedCandidatesPage() {
                     </div>
                   </div>
                 )}
+
               </div>
 
               {/* Right Panel: Score Model + Skill Radar + Executive Brief */}
@@ -412,31 +452,42 @@ export default function RankedCandidatesPage() {
                     <span style={{ fontSize: 11, background: "#f1f5f9", padding: "2px 8px", borderRadius: 4, color: "#64748b", fontWeight: 600 }}>Model v4.8</span>
                   </div>
                   <div style={{ padding: "8px 12px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 6, textAlign: "center", fontSize: 11, fontWeight: 700, color: "#0a66c2", marginBottom: 14, letterSpacing: "0.01em" }}>
-                    Composite = 40% Skills + 35% Exp + 15% Domain + 10% Edu
+                    Composite Formula (8 Variables) - Gap Penalty
                   </div>
                   {candidates[0] && (() => {
                     const bd = candidates[0].score_breakdown || {};
                     const bars = [
-                      { label: "Hard Skills Match (40%)", val: Math.round((bd.required_skill_score || 0) * 100), color: "#0d9488", textColor: "#0d9488" },
-                      { label: "Experience Relevance (35%)", val: Math.round((bd.experience_score || 0) * 100), color: "#0a66c2", textColor: "#0a66c2" },
-                      { label: "Domain & Recency (15%)", val: Math.round((bd.role_domain_similarity || 0) * 100), color: "#4f46e5", textColor: "#4f46e5" },
-                      { label: "Education & Background (10%)", val: Math.round((bd.education_score || 0) * 100), color: "#64748b", textColor: "#64748b" },
+                      { label: "Required Skills (35%)", val: Math.round((bd.required_skill_score || 0) * 100), color: "#0d9488", textColor: "#0d9488" },
+                      { label: "Preferred Skills (10%)", val: Math.round((bd.preferred_skill_score || 0) * 100), color: "#14b8a6", textColor: "#14b8a6" },
+                      { label: "Experience (20%)", val: Math.round((bd.experience_score || 0) * 100), color: "#0a66c2", textColor: "#0a66c2" },
+                      { label: "Responsibilities (10%)", val: Math.round((bd.responsibility_similarity || 0) * 100), color: "#3b82f6", textColor: "#3b82f6" },
+                      { label: "Domain Match (10%)", val: Math.round((bd.role_domain_similarity || 0) * 100), color: "#4f46e5", textColor: "#4f46e5" },
+                      { label: "Education (5%)", val: Math.round((bd.education_score || 0) * 100), color: "#64748b", textColor: "#64748b" },
+                      { label: "Projects (5%)", val: Math.round((bd.project_relevance || 0) * 100), color: "#8b5cf6", textColor: "#8b5cf6" },
+                      { label: "Certifications (5%)", val: Math.round((bd.certification_relevance || 0) * 100), color: "#d946ef", textColor: "#d946ef" },
                     ];
+                    const gapPenalty = bd.gap_penalty || 0;
                     return (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         {bars.map(b => (
                           <div key={b.label}>
-                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 12 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 11 }}>
                               <span style={{ color: "#334155", fontWeight: 500 }}>{b.label}</span>
                               <span style={{ fontWeight: 700, color: b.textColor }}>{b.val}%</span>
                             </div>
-                            <div className="progress-bar">
+                            <div className="progress-bar" style={{ height: 4 }}>
                               <div className="progress-fill" style={{ width: `${b.val}%`, background: b.color }} />
                             </div>
                           </div>
                         ))}
-                        <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>Total Composite Score:</span>
+                        {gapPenalty > 0 && (
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fef2f2", padding: "6px 10px", borderRadius: 4, border: "1px solid #fecaca", marginTop: 6 }}>
+                            <span style={{ fontSize: 11, color: "#dc2626", fontWeight: 600 }}>Gap Penalty</span>
+                            <span style={{ fontSize: 12, color: "#dc2626", fontWeight: 800 }}>-{gapPenalty} pts</span>
+                          </div>
+                        )}
+                        <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>Final Score:</span>
                           <span style={{ fontSize: 16, fontWeight: 800, color: "#0a66c2" }}>{candidates[0].overall_score} / 100</span>
                         </div>
                       </div>
@@ -452,7 +503,7 @@ export default function RankedCandidatesPage() {
                         <span className="material-symbols-outlined" style={{ fontSize: 18, color: "#0d9488" }}>radar</span>
                         <h3 style={{ fontSize: 13, fontWeight: 700 }}>Skill Gap Radar Matrix</h3>
                       </div>
-                      <span className="font-mono" style={{ fontSize: 10, color: "#64748b" }}>Req #{jobId?.slice(-3)?.toUpperCase()}</span>
+                      <span className="font-mono" style={{ fontSize: 10, color: "#64748b" }}>Batch #{jobId?.slice(-3)?.toUpperCase()}</span>
                     </div>
                     <p style={{ fontSize: 11, color: "#475569", marginBottom: 10 }}>
                       Cross-referenced ontology for <strong>{candidates[0].candidate_id}</strong>:

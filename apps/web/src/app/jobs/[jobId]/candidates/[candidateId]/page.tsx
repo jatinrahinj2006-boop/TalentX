@@ -93,17 +93,37 @@ export default function CandidateDetailPage() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
                 <div>
                   <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, marginBottom: 4 }}>
-                    <h1 style={{ fontSize: 22, fontWeight: 800, color: "#0f172a" }}>Candidate Dossier</h1>
+                    <h1 style={{ fontSize: 22, fontWeight: 800, color: "#0f172a" }}>
+                      {match.candidate_name || `Candidate ${match.candidate_id}`}
+                    </h1>
                     <span className="font-mono" style={{ fontSize: 12, background: "#f1f5f9", border: "1px solid #e2e8f0", padding: "2px 8px", borderRadius: 4, color: "#64748b" }}>
                       {match.candidate_id}
                     </span>
+                    {match.resume_file && (
+                      <span style={{ fontSize: 12, background: "#eff6ff", border: "1px solid #bfdbfe", padding: "2px 8px", borderRadius: 4, color: "#0a66c2", display: "flex", alignItems: "center", gap: 4 }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 13 }}>description</span>
+                        {match.resume_file}
+                      </span>
+                    )}
                     <span className={`badge ${tier === "strong" ? "badge-green" : tier === "moderate" ? "badge-blue" : "badge-red"}`}>
                       {tierLabel}
                     </span>
                   </div>
-                  <p style={{ fontSize: 12, color: "#475569" }}>
-                    Match Audit for Requisition: <span className="font-mono" style={{ color: "#0a66c2", fontWeight: 600 }}>{match.job_id}</span>
-                  </p>
+                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16, fontSize: 12, color: "#475569" }}>
+                    <span>Match Audit for Requisition: <strong className="font-mono" style={{ color: "#0a66c2" }}>{match.job_id}</strong></span>
+                    {match.candidate_email && (
+                      <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#0f172a" }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 14, color: "#0a66c2" }}>mail</span>
+                        {match.candidate_email}
+                      </span>
+                    )}
+                    {match.candidate_phone && (
+                      <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#0f172a" }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 14, color: "#0d9488" }}>call</span>
+                        {match.candidate_phone}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

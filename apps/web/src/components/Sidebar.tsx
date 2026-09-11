@@ -5,9 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navLinks = [
-  { icon: "smart_toy",     label: "Agent Orchestration", href: "/" },
-  { icon: "join_inner",    label: "Multi-Role Matcher",  href: "/jobs" },
-  { icon: "dynamic_feed",  label: "Batch Evaluation",    href: "/resumes/upload" },
+  { icon: "smart_toy",     label: "Batch Results",       href: "/" },
+  { icon: "dynamic_feed",  label: "Create Batch",        href: "/batches/new" },
   { icon: "badge",         label: "Candidate Bench",     href: "/candidates" },
   { icon: "account_tree",  label: "Skill Ontologies",    href: "/ontologies" },
   { icon: "terminal",      label: "Explainability Logs", href: "/logs" },

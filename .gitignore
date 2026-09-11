@@ -26,6 +26,12 @@ htmlcov/
 .nox/
 .hypothesis/
 .env
+.env.*
+env (1)
+*.db
+*.sqlite
+*.sqlite3
+data/*.db
 
 # Virtual Environment
 venv/
