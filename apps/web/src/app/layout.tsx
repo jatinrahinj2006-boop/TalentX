@@ -1,28 +1,22 @@
 // apps/web/src/app/layout.tsx
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
 
 export const metadata = {
-  title: "TalentX — AI Resume Screening",
-  description: "Evidence-grounded multi-agent resume screening for PS03",
+  title: "TalentX AI — Enterprise Recruiter Intelligence Platform",
+  description: "Multi-agent AI resume screening with evidence-grounded candidate match scores",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
           rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@400,0&display=swap"
         />
       </head>
       <body>
-        <div className="app-shell">
-          <Sidebar />
-          <main className="main-content">{children}</main>
-        </div>
+        {children}
       </body>
     </html>
   );
