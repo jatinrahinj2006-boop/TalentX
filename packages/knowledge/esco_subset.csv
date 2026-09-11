@@ -1,0 +1,6 @@
+concept_uri,preferred_label,alt_labels,description
+http://data.europa.eu/esco/skill/0001,Python,Python3;Python Language,High-level programming language
+http://data.europa.eu/esco/skill/0002,PostgreSQL,Postgres;Postgres DB,Relational database management system
+http://data.europa.eu/esco/skill/0003,FastAPI,Fast API;Python Web API,Modern fast web framework for building APIs with Python
+http://data.europa.eu/esco/skill/0004,Next.js,NextJS;React Framework,React framework for server-rendered apps
+http://data.europa.eu/esco/skill/0005,Machine Learning,ML;Deep Learning;AI,Development of algorithms that learn from data

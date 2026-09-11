@@ -1,0 +1,32 @@
+Candidate Name: Alex Rivera
+Location: San Francisco, CA
+Email: alex.rivera@example.com
+
+SUMMARY
+Senior Machine Learning Engineer with 4 years of experience building scalable ML pipelines, training transformer models, and deploying low-latency APIs in Python using PyTorch and FastAPI.
+
+EDUCATION
+- B.S. in Computer Science, Stanford University, 2020. Relevant coursework: Machine Learning, Distributed Systems.
+
+EXPERIENCE
+Machine Learning Engineer | DataVision Inc.
+June 2022 – Present (27 months)
+- Developed and deployed real-time recommendation model using Python, PyTorch, and PostgreSQL.
+- Reduced inference latency by 40% using TensorRT and Docker containerization on AWS.
+- Built automated data preprocessing pipelines using Pandas, NumPy, and Scikit-Learn.
+
+Junior AI Developer | TechPulse Labs
+July 2020 – May 2022 (23 months)
+- Implemented NLP model for sentiment analysis using HuggingFace Transformers and Python.
+- Maintained SQL databases and built REST APIs with FastAPI and Docker.
+
+SKILLS
+- Programming: Python, C++, SQL, Bash
+- Frameworks & Libraries: PyTorch, TensorFlow, Scikit-Learn, Pandas, NumPy, FastAPI, Flask
+- Databases & Infrastructure: PostgreSQL, Redis, Docker, Kubernetes, AWS, Git
+
+PROJECTS
+- Autonomous Resume Summarizer: Built end-to-end NLP pipeline using Python and OpenAI API to summarize candidate profiles.
+
+CERTIFICATIONS
+- AWS Certified Machine Learning - Specialty (2022)

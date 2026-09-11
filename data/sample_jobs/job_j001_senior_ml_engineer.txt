@@ -1,0 +1,28 @@
+Job Title: Senior Machine Learning Engineer
+Job ID: J001
+Domain: Artificial Intelligence & Machine Learning
+Minimum Experience: 24 months
+
+Job Summary:
+We are looking for a Senior Machine Learning Engineer to design, build, and deploy production ML models and backend microservices.
+
+Required Skills:
+- Python
+- PyTorch
+- PostgreSQL
+- Docker
+- Machine Learning
+
+Preferred Skills:
+- FastAPI
+- Kubernetes
+- AWS
+- Redis
+
+Education Requirements:
+- Bachelor's degree in Computer Science, Data Science, or related technical field.
+
+Responsibilities:
+- Build and train deep learning models for production NLP applications.
+- Optimize inference speed and containerize microservices with Docker.
+- Collaborate with data platform engineers to maintain clean data pipelines.

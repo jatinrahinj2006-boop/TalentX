@@ -1,0 +1,27 @@
+Job Title: Full Stack Developer
+Job ID: J002
+Domain: Web Development
+Minimum Experience: 12 months
+
+Job Summary:
+Seeking a Full Stack Developer to build modern web applications using React, Next.js, and Python FastAPI.
+
+Required Skills:
+- JavaScript
+- TypeScript
+- React
+- Next.js
+- Python
+
+Preferred Skills:
+- FastAPI
+- Tailwind CSS
+- Docker
+- PostgreSQL
+
+Education Requirements:
+- B.S. or B.Tech in Computer Science, Software Engineering, or equivalent.
+
+Responsibilities:
+- Build responsive UI components using React, Next.js, and TypeScript.
+- Develop backend REST API endpoints using FastAPI and PostgreSQL.

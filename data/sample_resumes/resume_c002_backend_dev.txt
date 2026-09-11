@@ -1,0 +1,24 @@
+Candidate Name: Jordan Smith
+Email: jordan.smith@example.com
+
+SUMMARY
+Backend Software Engineer with 3 years of experience building high-throughput microservices, relational databases, and cloud infrastructure using Python, Go, and PostgreSQL.
+
+EDUCATION
+- B.Tech in Information Technology, IIT Bombay, 2021.
+
+EXPERIENCE
+Backend Engineer | CloudScale Tech
+August 2021 – Present (37 months)
+- Architected RESTful APIs using Python, FastAPI, and PostgreSQL handling 50k RPM.
+- Integrated Redis caching layer to reduce database load by 35%.
+- Configured CI/CD pipelines with GitHub Actions and Docker.
+
+SKILLS
+- Core Languages: Python, Go, SQL
+- Web Frameworks: FastAPI, Django, Flask
+- Storage: PostgreSQL, Redis, MongoDB
+- DevOps: Docker, Kubernetes, Git, AWS
+
+CERTIFICATIONS
+- Certified Kubernetes Application Developer (CKAD) (2023)
