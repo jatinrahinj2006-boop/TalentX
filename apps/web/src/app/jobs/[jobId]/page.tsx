@@ -34,6 +34,8 @@ export default function RankedCandidatesPage() {
   const [showOutreachModal, setShowOutreachModal] = useState(false);
   const [outreachLoading, setOutreachLoading] = useState(false);
   const [dismissBestMatch, setDismissBestMatch] = useState(false);
+  const [briefLoading, setBriefLoading] = useState(false);
+  const [copyDone, setCopyDone] = useState(false);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -716,12 +718,52 @@ export default function RankedCandidatesPage() {
                       </p>
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                      <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center", gap: 6 }}>
+                      <button
+                        className="btn btn-primary"
+                        style={{ width: "100%", justifyContent: "center", gap: 6, opacity: briefLoading ? 0.7 : 1 }}
+                        disabled={briefLoading || outreachLoading}
+                        onClick={() => handleTriggerOutreach(candidates[0].candidate_id)}
+                      >
                         <span className="material-symbols-outlined" style={{ fontSize: 14 }}>auto_awesome</span>
-                        Generate Hiring Manager Brief
+                        {briefLoading || outreachLoading ? "Generating…" : "Generate Hiring Manager Brief"}
                       </button>
-                      <button className="btn" style={{ width: "100%", justifyContent: "center", fontSize: 12 }}>
-                        Copy Synthesized Markdown Summary
+                      <button
+                        className="btn"
+                        style={{ width: "100%", justifyContent: "center", fontSize: 12 }}
+                        onClick={() => {
+                          const c = candidates[0];
+                          const skills = (c.skill_matches || [])
+                            .filter((s: any) => s.status === "matched")
+                            .map((s: any) => s.skill_name || s.skill)
+                            .join(", ");
+                          const gaps = (c.skill_gaps || [])
+                            .map((g: any) => `- **${g.skill_name || g.skill}** (${g.severity}): ${g.recommendation || g.reason || ""}`.trim())
+                            .join("\n");
+                          const md = [
+                            `# Candidate Summary — ${c.candidate_name || c.candidate_id}`,
+                            ``,
+                            `**Overall Score:** ${c.overall_score}/100`,
+                            `**Job:** ${job?.title || jobId}`,
+                            ``,
+                            `## Recruiter Summary`,
+                            c.recruiter_summary || "_No summary available._",
+                            ``,
+                            `## Matched Skills`,
+                            skills || "_None_",
+                            ``,
+                            ...(gaps ? [`## Skill Gaps`, gaps, ``] : []),
+                            `## Score Breakdown`,
+                            ...Object.entries(c.score_breakdown || {}).map(
+                              ([k, v]) => `- **${k.replace(/_/g, " ")}:** ${typeof v === "number" ? v.toFixed(1) : v}`
+                            ),
+                          ].join("\n");
+                          navigator.clipboard.writeText(md).then(() => {
+                            setCopyDone(true);
+                            setTimeout(() => setCopyDone(false), 2000);
+                          }).catch(() => alert("Clipboard write failed — please copy manually."));
+                        }}
+                      >
+                        {copyDone ? "✓ Copied!" : "Copy Synthesized Markdown Summary"}
                       </button>
                     </div>
                   </div>
