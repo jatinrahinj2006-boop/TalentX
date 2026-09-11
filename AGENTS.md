@@ -15,7 +15,6 @@ This file is automatically loaded by Antigravity, OpenCode, and any terminal-nat
 5. **Fairness & Sensitive Attribute Exclusion**: Sensitive demographic attributes (`name`, `gender`, `age`, `photo`, `religion`, `caste`, `marital_status`, `address`) MUST NEVER be passed into scoring functions in `packages/scoring/`. All candidate scoring operates strictly on anonymized feature vectors.
 
 ---
-
 ## 2. Directory Ownership Boundaries
 
 To avoid conflicting changes between concurrent development tools:

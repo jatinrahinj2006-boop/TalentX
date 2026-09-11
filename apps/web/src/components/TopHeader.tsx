@@ -10,27 +10,6 @@ interface TopHeaderProps {
 }
 
 export default function TopHeader({ maskPii, onToggleMaskPii }: TopHeaderProps) {
-  const [darkMode, setDarkMode] = useState(false);
-
-  useEffect(() => {
-    const isDark = document.documentElement.classList.contains("dark") || localStorage.getItem("theme") === "dark";
-    if (isDark) {
-      document.documentElement.classList.add("dark");
-      setDarkMode(true);
-    }
-  }, []);
-
-  const toggleDarkMode = () => {
-    if (darkMode) {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-      setDarkMode(false);
-    } else {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-      setDarkMode(true);
-    }
-  };
 
   return (
     <header className="top-header">
@@ -49,19 +28,6 @@ export default function TopHeader({ maskPii, onToggleMaskPii }: TopHeaderProps) 
 
       {/* Right Actions */}
       <div className="header-actions">
-        {/* Dark Mode Toggle Button */}
-        <button
-          onClick={toggleDarkMode}
-          className="btn-icon"
-          title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-          style={{ gap: 6, padding: "6px 10px", fontSize: 12, fontWeight: 600 }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 18, color: darkMode ? "#f59e0b" : "#64748b" }}>
-            {darkMode ? "light_mode" : "dark_mode"}
-          </span>
-          <span>{darkMode ? "Light" : "Dark"}</span>
-        </button>
-
         {onToggleMaskPii && (
           <div
             className={`toggle-wrap`}

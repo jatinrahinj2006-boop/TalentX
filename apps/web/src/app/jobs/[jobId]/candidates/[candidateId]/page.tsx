@@ -6,6 +6,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import TopHeader from "@/components/TopHeader";
 import { api } from "@/lib/api";
+import OutreachModal from "@/components/OutreachModal";
 
 export default function CandidateDetailPage() {
   const { jobId, candidateId } = useParams<{ jobId: string; candidateId: string }>();
@@ -17,6 +18,22 @@ export default function CandidateDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [maskPii, setMaskPii] = useState(initialMaskPii);
   const [activeCitation, setActiveCitation] = useState<string | null>(null);
+  const [outreachData, setOutreachData] = useState<any>(null);
+  const [showOutreachModal, setShowOutreachModal] = useState(false);
+  const [outreachLoading, setOutreachLoading] = useState(false);
+
+  const handleTriggerOutreach = async () => {
+    setOutreachLoading(true);
+    try {
+      const res = await api.candidateOutreach(jobId, candidateId);
+      setOutreachData(res);
+      setShowOutreachModal(true);
+    } catch (e: any) {
+      alert("Failed to generate outreach email draft.");
+    } finally {
+      setOutreachLoading(false);
+    }
+  };
 
   useEffect(() => {
     api.candidate(jobId, candidateId, maskPii)
@@ -107,6 +124,15 @@ export default function CandidateDetailPage() {
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    onClick={handleTriggerOutreach}
+                    disabled={outreachLoading}
+                    className="btn btn-sm"
+                    style={{ background: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0", fontWeight: 700 }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>mail</span>
+                    {outreachLoading ? "Drafting..." : "Draft Outreach Email"}
+                  </button>
                   <button className="btn btn-sm">
                     <span className="material-symbols-outlined" style={{ fontSize: 14 }}>file_download</span>
                     Export Audit PDF
@@ -119,6 +145,18 @@ export default function CandidateDetailPage() {
               </div>
             </div>
           </section>
+
+          {showOutreachModal && outreachData && (
+            <OutreachModal
+              jobId={jobId}
+              candidateId={outreachData.candidate_id}
+              candidateName={outreachData.candidate_name || outreachData.candidate_id}
+              initialSubject={outreachData.subject}
+              initialBody={outreachData.body}
+              contactInfo={outreachData.contact_info}
+              onClose={() => setShowOutreachModal(false)}
+            />
+          )}
 
           {/* Main 2-Column Layout: 65% Case / 35% Evidence Margin */}
           <section style={{ padding: "24px 32px" }}>

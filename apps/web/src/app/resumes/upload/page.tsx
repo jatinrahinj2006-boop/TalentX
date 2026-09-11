@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
 import TopHeader from "@/components/TopHeader";
 import { api } from "@/lib/api";
@@ -24,7 +25,53 @@ export default function UploadResumesPage() {
   const [agentProgress, setAgentProgress] = useState<number[]>([0, 0, 0, 0, 0]);
   const [logs, setLogs] = useState<LogMessage[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [existingResumes, setExistingResumes] = useState<any[]>([]);
+  const [loadingExisting, setLoadingExisting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingAll, setDeletingAll] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const fetchExistingResumes = async () => {
+    setLoadingExisting(true);
+    try {
+      const res = await api.resumes();
+      setExistingResumes(res.resumes || []);
+    } catch (e) {
+      console.error("Failed to load existing resumes:", e);
+    } finally {
+      setLoadingExisting(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExistingResumes();
+  }, []);
+
+  const handleDeleteResume = async (candidateId: string) => {
+    if (!confirm(`Delete candidate resume ${candidateId} from database?`)) return;
+    setDeletingId(candidateId);
+    try {
+      await api.deleteResume(candidateId);
+      setExistingResumes(prev => prev.filter(r => r.candidate_id !== candidateId));
+    } catch (e: any) {
+      alert("Failed to delete resume: " + (e.message || "Unknown error"));
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleClearAllResumes = async () => {
+    if (!confirm("Are you sure you want to delete ALL resumes from the database?")) return;
+    setDeletingAll(true);
+    try {
+      await api.deleteAllResumes();
+      setExistingResumes([]);
+    } catch (e: any) {
+      alert("Failed to clear resumes: " + (e.message || "Unknown error"));
+    } finally {
+      setDeletingAll(false);
+    }
+  };
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation();
@@ -74,10 +121,10 @@ export default function UploadResumesPage() {
       // Step 3: Matching Agent
       setActiveAgentIndex(2);
       addLog("Matching Agent", "#4f46e5", `Computing vector cosine similarity matrices across ${fileCount} candidates...`);
-      await api.runScreening();
+      const screenRes = await api.runScreening();
       setAgentProgress([100, 100, 60, 0, 0]);
       await new Promise(r => setTimeout(r, 800));
-      addLog("Matching Agent", "#4f46e5", `Deterministic scoring calculated. Highest similarity match: 96.3%.`);
+      addLog("Matching Agent", "#4f46e5", `Deterministic scoring calculated. Pipeline evaluated ${screenRes.resume_count || fileCount} candidates.`);
       setAgentProgress([100, 100, 100, 0, 0]);
 
       // Step 4: Skill Gap Agent
@@ -95,12 +142,14 @@ export default function UploadResumesPage() {
       setAgentProgress([100, 100, 100, 100, 100]);
 
       setStep("done");
+      const targetJobId = screenRes?.job_ids?.[0] || "J001";
       await new Promise(r => setTimeout(r, 900));
-      router.push("/");
+      router.push(`/jobs/${targetJobId}`);
     } catch (e: any) {
       setErrorMsg(e.message || "Examination pipeline failed.");
       setStep("error");
     }
+
   };
 
   const fileCount = files ? files.length : 0;
@@ -275,6 +324,104 @@ export default function UploadResumesPage() {
                   )}
                 </div>
               )}
+
+              {/* Existing Database Resumes Inventory */}
+              <div className="card" style={{ padding: 20 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: "#eff6ff", color: "#0a66c2", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>inventory_2</span>
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>
+                        Database Stored Candidate Resumes ({existingResumes.length})
+                      </h3>
+                      <p style={{ fontSize: 11, color: "#64748b" }}>
+                        Resumes saved and available across all active evaluation benchmarks
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <button onClick={fetchExistingResumes} className="btn btn-sm" style={{ padding: "4px 8px" }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>refresh</span>
+                      Refresh
+                    </button>
+                    {existingResumes.length > 0 && (
+                      <button
+                        onClick={handleClearAllResumes}
+                        disabled={deletingAll}
+                        className="btn btn-sm"
+                        style={{ color: "#dc2626", borderColor: "#fecaca", background: "#fef2f2", padding: "4px 8px" }}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>delete_sweep</span>
+                        {deletingAll ? "Purging..." : "Clear All Resumes"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {loadingExisting ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div className="skeleton" style={{ height: 36, width: "100%", borderRadius: 6 }} />
+                    <div className="skeleton" style={{ height: 36, width: "100%", borderRadius: 6 }} />
+                  </div>
+                ) : existingResumes.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "24px 16px", background: "#f8fafc", borderRadius: 8, border: "1px dashed #cbd5e1" }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 28, color: "#94a3b8", display: "block", marginBottom: 6 }}>description</span>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>Database is currently empty</div>
+                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Upload resumes above to populate candidate dossiers.</div>
+                  </div>
+                ) : (
+                  <div style={{ maxHeight: 220, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+                    {existingResumes.map((r: any) => (
+                      <div
+                        key={r.candidate_id}
+                        style={{
+                          padding: "8px 12px",
+                          background: "#f8fafc",
+                          border: "1px solid #e2e8f0",
+                          borderRadius: 6,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 12
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                          <span className="font-mono" style={{ fontSize: 11, fontWeight: 700, color: "#0a66c2", background: "#eff6ff", border: "1px solid #bfdbfe", padding: "2px 6px", borderRadius: 4, flexShrink: 0 }}>
+                            {r.candidate_id}
+                          </span>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: "#0f172a", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
+                            {r.filename || r.file}
+                          </span>
+                          {r.file_size_kb > 0 && (
+                            <span className="font-mono" style={{ fontSize: 10, color: "#64748b", flexShrink: 0 }}>
+                              ({r.file_size_kb} KB)
+                            </span>
+                          )}
+                          {r.screened_jobs_count > 0 && (
+                            <span className="badge badge-green" style={{ fontSize: 10, flexShrink: 0 }}>
+                              {r.top_score}% top match
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => handleDeleteResume(r.candidate_id)}
+                          disabled={deletingId === r.candidate_id}
+                          className="btn btn-sm"
+                          style={{ color: "#dc2626", borderColor: "#fecaca", padding: "2px 8px", fontSize: 11 }}
+                          title="Delete candidate resume from database"
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 13 }}>delete</span>
+                          {deletingId === r.candidate_id ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Explanatory Workflow */}
               <div className="card">

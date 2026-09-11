@@ -2,6 +2,18 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
+class ContactDetail(BaseModel):
+    value: str = Field(..., description="Extracted contact value (e.g. email, phone, URL)")
+    evidence_span: Optional[str] = Field(None, description="Source text snippet proving this contact detail")
+    page_number: int = Field(default=1, description="Page number where detail was found")
+
+class ContactInfo(BaseModel):
+    email: Optional[ContactDetail] = None
+    phone: Optional[ContactDetail] = None
+    linkedin_url: Optional[ContactDetail] = None
+    github_url: Optional[ContactDetail] = None
+    portfolio_url: Optional[ContactDetail] = None
+
 class ExtractedSkill(BaseModel):
     name: str = Field(..., description="Canonical or raw name of the skill")
     evidence_span: str = Field(..., description="Exact textual span from resume proving this skill")
@@ -36,6 +48,7 @@ class CertificationEntry(BaseModel):
 class ExtractedResume(BaseModel):
     candidate_id: str = Field(..., description="Unique candidate ID (e.g., C001)")
     name: str = Field(..., description="Candidate full name (kept separate from scoring)")
+    contact_info: ContactInfo = Field(default_factory=ContactInfo)
     education: List[EducationEntry] = Field(default_factory=list)
     experience: List[ExperienceEntry] = Field(default_factory=list)
     skills: List[ExtractedSkill] = Field(default_factory=list)

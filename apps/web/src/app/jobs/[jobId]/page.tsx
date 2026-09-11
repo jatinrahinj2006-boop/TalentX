@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import TopHeader from "@/components/TopHeader";
 import { api } from "@/lib/api";
+import OutreachModal from "@/components/OutreachModal";
 
 function ScoreTier(score: number) {
   if (score >= 80) return { tier: "strong",   label: "Strong Match",    badgeCls: "badge-green" };
@@ -24,6 +25,41 @@ export default function RankedCandidatesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [outreachData, setOutreachData] = useState<any>(null);
+  const [showOutreachModal, setShowOutreachModal] = useState(false);
+  const [outreachLoading, setOutreachLoading] = useState(false);
+  const [dismissBestMatch, setDismissBestMatch] = useState(false);
+
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleTriggerOutreach = async (candidateId: string) => {
+    setOutreachLoading(true);
+    try {
+      const res = await api.candidateOutreach(jobId, candidateId);
+      setOutreachData(res);
+      setShowOutreachModal(true);
+    } catch (e: any) {
+      alert("Failed to generate outreach email draft.");
+    } finally {
+      setOutreachLoading(false);
+    }
+  };
+
+  const handleDeleteCandidate = async (candidateId: string, candidateName?: string) => {
+    const label = candidateName ? `${candidateName} (${candidateId})` : candidateId;
+    if (!confirm(`Delete candidate resume for ${label} from database? This removes all associated scoring records.`)) return;
+    setDeletingId(candidateId);
+    try {
+      await api.deleteResume(candidateId);
+      setCandidates(prev => prev.filter(c => c.candidate_id !== candidateId));
+      setSelectedIds(prev => prev.filter(id => id !== candidateId));
+    } catch (e: any) {
+      alert("Failed to delete candidate resume: " + (e.message || "Unknown error"));
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
 
   useEffect(() => {
     async function load() {
@@ -141,8 +177,80 @@ export default function RankedCandidatesPage() {
                   </div>
                 </div>
               )}
+
+              {/* Best Match Notification Banner */}
+              {topCandidates[0] && topCandidates[0].overall_score >= 50 && !dismissBestMatch && (
+                <div style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)", borderRadius: 12, padding: "16px 20px", color: "white", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, border: "1px solid #334155" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#059669", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 18, color: "white" }}>
+                      ★
+                    </div>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontWeight: 800, fontSize: 15 }}>
+                          Best Match: {topCandidates[0].candidate_name || topCandidates[0].candidate_id}
+                        </span>
+                        <span className="font-mono" style={{ fontSize: 10, color: "#94a3b8" }}>{topCandidates[0].candidate_id}</span>
+                        <span className="badge badge-green">{topCandidates[0].overall_score}% Fit Score</span>
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4, alignItems: "center" }}>
+                        <span style={{ fontSize: 12, color: "#94a3b8" }}>
+                          Skills: {topCandidates[0].skill_matches?.filter((s:any)=>s.status==='matched').slice(0,3).map((s:any)=>s.skill_name).join(", ") || "Technical Skills"}
+                        </span>
+                        {topCandidates[0].contact_info?.email?.value && (
+                          <a
+                            href={`mailto:${topCandidates[0].contact_info.email.value}`}
+                            style={{ fontSize: 11, color: "#6ee7b7", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 4, padding: "1px 8px", textDecoration: "none" }}
+                          >
+                            ✉ {topCandidates[0].contact_info.email.value}
+                          </a>
+                        )}
+                        {topCandidates[0].contact_info?.github_url?.value && (
+                          <a
+                            href={topCandidates[0].contact_info.github_url.value}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ fontSize: 11, color: "#93c5fd", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 4, padding: "1px 8px", textDecoration: "none" }}
+                          >
+                            ⌨ {topCandidates[0].contact_info.github_url.value.replace("https://github.com/", "")}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <button
+                      onClick={() => handleTriggerOutreach(topCandidates[0].candidate_id)}
+                      disabled={outreachLoading}
+                      className="btn btn-primary btn-sm"
+                      style={{ background: "#059669", borderColor: "#059669", padding: "8px 16px", fontWeight: 700, gap: 6 }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>mail</span>
+                      {outreachLoading ? "Drafting Outreach..." : "Draft Outreach Email"}
+                    </button>
+                    <button onClick={() => setDismissBestMatch(true)} style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: 16 }}>
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
+
+          {/* Outreach Modal Component */}
+          {showOutreachModal && outreachData && (
+            <OutreachModal
+              jobId={jobId}
+              candidateId={outreachData.candidate_id}
+              candidateName={outreachData.candidate_name || outreachData.candidate_id}
+              initialSubject={outreachData.subject}
+              initialBody={outreachData.body}
+              contactInfo={outreachData.contact_info}
+              onClose={() => setShowOutreachModal(false)}
+            />
+          )}
+
 
           {/* Main Grid: Candidates + Right Panel */}
           <section style={{ padding: "24px 32px" }}>
@@ -248,18 +356,65 @@ export default function RankedCandidatesPage() {
                             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 4 }}>
                               <Link
                                 href={`/jobs/${jobId}/candidates/${c.candidate_id}${maskPii ? "?mask_pii=true" : ""}`}
-                                className="font-mono"
-                                style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}
+                                style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}
                               >
-                                {c.candidate_id}
+                                {maskPii ? c.candidate_id : (c.candidate_name || c.candidate_id)}
                               </Link>
+                              <span className="font-mono" style={{ fontSize: 10, color: "#64748b", background: "#f1f5f9", padding: "1px 6px", borderRadius: 4, border: "1px solid #e2e8f0" }}>
+                                {c.candidate_id}
+                              </span>
                               <span className={`badge ${st.badgeCls}`}>{c.overall_score}% {st.label}</span>
                               {highGaps.length === 0 && <span className="badge badge-green">Zero Critical Gaps</span>}
                               {highGaps.length > 0 && <span className="badge badge-red">{highGaps.length} Critical Gap{highGaps.length > 1 ? "s" : ""}</span>}
                             </div>
-                            <p style={{ fontSize: 11, color: "#475569" }}>
-                              {c.experience_years ? `${c.experience_years} yrs experience` : "Parsed from Resume"} • Agent Score: {c.overall_score}%
-                            </p>
+
+                            {/* Contact credentials row */}
+                            {!maskPii && (
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                                {c.contact_info?.email?.value && (
+                                  <a
+                                    href={`mailto:${c.contact_info.email.value}`}
+                                    style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#0a66c2", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 4, padding: "2px 8px", textDecoration: "none" }}
+                                    title={`Evidence: "${c.contact_info.email.evidence_span || c.contact_info.email.value}"`}
+                                  >
+                                    <span className="material-symbols-outlined" style={{ fontSize: 12 }}>mail</span>
+                                    {c.contact_info.email.value}
+                                  </a>
+                                )}
+                                {c.contact_info?.github_url?.value && (
+                                  <a
+                                    href={c.contact_info.github_url.value}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#0f172a", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: 4, padding: "2px 8px", textDecoration: "none" }}
+                                    title={`Evidence: "${c.contact_info.github_url.evidence_span || c.contact_info.github_url.value}"`}
+                                  >
+                                    <span className="material-symbols-outlined" style={{ fontSize: 12 }}>code</span>
+                                    {c.contact_info.github_url.value.replace("https://github.com/", "").replace("https://www.github.com/", "")}
+                                  </a>
+                                )}
+                                {c.contact_info?.linkedin_url?.value && (
+                                  <a
+                                    href={c.contact_info.linkedin_url.value}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#0a66c2", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 4, padding: "2px 8px", textDecoration: "none" }}
+                                  >
+                                    <span className="material-symbols-outlined" style={{ fontSize: 12 }}>person</span>
+                                    LinkedIn
+                                  </a>
+                                )}
+                                {c.contact_info?.phone?.value && (
+                                  <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#475569", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 4, padding: "2px 8px" }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: 12 }}>call</span>
+                                    {c.contact_info.phone.value}
+                                  </span>
+                                )}
+                                {!c.contact_info?.email?.value && !c.contact_info?.github_url?.value && !c.contact_info?.linkedin_url?.value && (
+                                  <span style={{ fontSize: 11, color: "#94a3b8", fontStyle: "italic" }}>No contact details extracted</span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -271,11 +426,27 @@ export default function RankedCandidatesPage() {
                             style={{ cursor: "pointer", accentColor: "#0a66c2" }}
                             title="Select for comparison"
                           />
+                          <button
+                            onClick={() => handleTriggerOutreach(c.candidate_id)}
+                            disabled={outreachLoading}
+                            className="btn btn-sm"
+                            title="Draft Outreach Email"
+                            style={{ display: "flex", alignItems: "center", gap: 4, background: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0" }}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>mail</span>
+                            Outreach
+                          </button>
                           <Link href={`/jobs/${jobId}/candidates/${c.candidate_id}${maskPii ? "?mask_pii=true" : ""}`} className="btn btn-sm btn-primary">
                             View Audit Trace
                           </Link>
-                          <button className="btn-icon" title="Explainability Report">
-                            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>insights</span>
+                          <button
+                            onClick={() => handleDeleteCandidate(c.candidate_id, c.candidate_name)}
+                            disabled={deletingId === c.candidate_id}
+                            className="btn-icon"
+                            style={{ color: "#dc2626" }}
+                            title="Delete Candidate Resume from Database"
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>delete</span>
                           </button>
                         </div>
                       </div>
@@ -372,9 +543,33 @@ export default function RankedCandidatesPage() {
                             return (
                               <tr key={c.candidate_id} className="row-hover">
                                 <td>
-                                  <span className="font-mono" style={{ fontWeight: 700, color: "#0f172a" }}>
-                                    #{c.rank} {c.candidate_id}
-                                  </span>
+                                  <div style={{ fontWeight: 700, fontSize: 13, color: "#0f172a" }}>
+                                    #{c.rank} {maskPii ? c.candidate_id : (c.candidate_name || c.candidate_id)}
+                                  </div>
+                                  {!maskPii && (
+                                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 3 }}>
+                                      <span className="font-mono" style={{ fontSize: 10, color: "#94a3b8" }}>{c.candidate_id}</span>
+                                      {c.contact_info?.email?.value && (
+                                        <a
+                                          href={`mailto:${c.contact_info.email.value}`}
+                                          style={{ fontSize: 10, color: "#0a66c2", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 3, padding: "1px 6px", textDecoration: "none" }}
+                                          title={c.contact_info.email.value}
+                                        >
+                                          ✉ {c.contact_info.email.value}
+                                        </a>
+                                      )}
+                                      {c.contact_info?.github_url?.value && (
+                                        <a
+                                          href={c.contact_info.github_url.value}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          style={{ fontSize: 10, color: "#0f172a", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: 3, padding: "1px 6px", textDecoration: "none" }}
+                                        >
+                                          ⌨ {c.contact_info.github_url.value.replace("https://github.com/", "")}
+                                        </a>
+                                      )}
+                                    </div>
+                                  )}
                                 </td>
                                 <td>
                                   <span className="font-mono" style={{ fontWeight: 700, color: "#475569" }}>{c.overall_score}%</span>
@@ -386,9 +581,30 @@ export default function RankedCandidatesPage() {
                                   {highGaps[0]?.skill_name || "No critical gaps"}
                                 </td>
                                 <td style={{ textAlign: "right" }}>
-                                  <Link href={`/jobs/${jobId}/candidates/${c.candidate_id}`} style={{ color: "#0a66c2", fontWeight: 700, fontSize: 12 }}>
-                                    Inspect
-                                  </Link>
+                                  <div style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "flex-end" }}>
+                                    <button
+                                      onClick={() => handleTriggerOutreach(c.candidate_id)}
+                                      disabled={outreachLoading}
+                                      className="btn btn-sm"
+                                      style={{ fontSize: 11, padding: "2px 8px", background: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0" }}
+                                      title="Draft Outreach Email"
+                                    >
+                                      <span className="material-symbols-outlined" style={{ fontSize: 13 }}>mail</span>
+                                      Outreach
+                                    </button>
+                                    <Link href={`/jobs/${jobId}/candidates/${c.candidate_id}`} style={{ color: "#0a66c2", fontWeight: 700, fontSize: 12 }}>
+                                      Inspect
+                                    </Link>
+                                    <button
+                                      onClick={() => handleDeleteCandidate(c.candidate_id, c.candidate_name)}
+                                      disabled={deletingId === c.candidate_id}
+                                      className="btn-icon"
+                                      style={{ color: "#dc2626", width: 26, height: 26 }}
+                                      title="Delete Candidate Resume from Database"
+                                    >
+                                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             );

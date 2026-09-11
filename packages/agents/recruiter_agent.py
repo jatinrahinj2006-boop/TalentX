@@ -128,27 +128,25 @@ Return ONLY plain text (no JSON).
 """
 
     # Try LLM
-    groq_key = os.environ.get("GROQ_API_KEY")
-    gemini_key = os.environ.get("GEMINI_API_KEY")
-
-    if groq_key or gemini_key:
+    groq_key = os.environ.get("GROQ_API_KEY", "").strip()
+    if groq_key and not groq_key.startswith("your_"):
         try:
             import urllib.request
-            if groq_key:
-                req = urllib.request.Request(
-                    "https://api.groq.com/openai/v1/chat/completions",
-                    headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
-                    data=json.dumps({
-                        "model": "llama-3.3-70b-versatile",
-                        "messages": [{"role": "user", "content": prompt}],
-                        "temperature": 0.3,
-                        "max_tokens": 300,
-                    }).encode()
-                )
-                with urllib.request.urlopen(req, timeout=15) as resp:
-                    data = json.loads(resp.read())
-                    return data["choices"][0]["message"]["content"].strip()
+            req = urllib.request.Request(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
+                data=json.dumps({
+                    "model": "llama-3.3-70b-versatile",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.3,
+                    "max_tokens": 300,
+                }).encode()
+            )
+            with urllib.request.urlopen(req, timeout=2) as resp:
+                data = json.loads(resp.read())
+                return data["choices"][0]["message"]["content"].strip()
         except Exception as e:
-            print(f"[Recruiter Agent] LLM call failed: {e}, using heuristic summary.")
+            print(f"[Recruiter Agent] LLM call failed ({e}), using heuristic summary.")
 
     return _heuristic_summary(match)
+

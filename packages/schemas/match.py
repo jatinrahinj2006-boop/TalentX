@@ -2,6 +2,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from packages.schemas.evidence import EvidenceItem
+from packages.schemas.resume import ContactInfo
 
 class SkillMatch(BaseModel):
     skill_name: str
@@ -32,8 +33,10 @@ class MatchResult(BaseModel):
     match_id: str
     candidate_id: str
     job_id: str
+    candidate_name: Optional[str] = None
     overall_score: float = Field(..., ge=0.0, le=100.0)
     score_breakdown: ScoreBreakdown
+    contact_info: Optional[ContactInfo] = None
     skill_matches: List[SkillMatch] = Field(default_factory=list)
     skill_gaps: List[SkillGapItem] = Field(default_factory=list)
     evidence_list: List[EvidenceItem] = Field(default_factory=list)

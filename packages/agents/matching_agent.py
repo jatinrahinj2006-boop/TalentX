@@ -179,10 +179,13 @@ def match_candidate_to_job(
         match_id=mid,
         candidate_id=resume.candidate_id,
         job_id=job.job_id,
+        candidate_name=getattr(resume, "name", None),
         overall_score=score_result["overall_score"],
         score_breakdown=breakdown,
+        contact_info=getattr(resume, "contact_info", None),
         skill_matches=skill_matches,
         skill_gaps=[],       # Filled by Skill Gap Agent
         evidence_list=[],    # Filled by Recruiter Agent
         recruiter_summary=None,
     )
+

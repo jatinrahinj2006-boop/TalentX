@@ -8,9 +8,7 @@ const navLinks = [
   { icon: "smart_toy",     label: "Agent Orchestration", href: "/" },
   { icon: "join_inner",    label: "Multi-Role Matcher",  href: "/jobs" },
   { icon: "dynamic_feed",  label: "Batch Evaluation",    href: "/resumes/upload" },
-  { icon: "badge",         label: "Candidate Bench",     href: "/candidates" },
-  { icon: "account_tree",  label: "Skill Ontologies",    href: "/ontologies" },
-  { icon: "terminal",      label: "Explainability Logs", href: "/logs" },
+  { icon: "compare_arrows",label: "Compare Candidates", href: "/jobs/compare" },
 ];
 
 export default function Sidebar() {
@@ -24,7 +22,7 @@ export default function Sidebar() {
       <div className="sidebar-body">
         {/* Brand header */}
         <div className="sidebar-brand">
-          <div className="brand-logomark">T</div>
+          <img src="/logo-icon.png" alt="TalentX Logo" className="brand-logo-img" />
           <div>
             <div className="brand-name">
               TalentX
