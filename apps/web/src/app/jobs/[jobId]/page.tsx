@@ -15,8 +15,13 @@ function ScoreTier(score: number) {
   return               { tier: "weak",     label: "Below Threshold", badgeCls: "badge-red"   };
 }
 
+import CandidateComparisonView from "@/components/CandidateComparisonView";
+
 export default function RankedCandidatesPage() {
   const { jobId } = useParams<{ jobId: string }>();
+  if (jobId === "compare") {
+    return <CandidateComparisonView />;
+  }
   const router = useRouter();
 
   const [job, setJob] = useState<any>(null);
@@ -62,6 +67,7 @@ export default function RankedCandidatesPage() {
 
 
   useEffect(() => {
+    if (!jobId || jobId === "compare") return;
     async function load() {
       setLoading(true);
       setError(null);

@@ -21,3 +21,7 @@ class ExtractedJob(BaseModel):
     preferred_skills: List[PreferredSkill] = Field(default_factory=list)
     education_requirements: List[str] = Field(default_factory=list)
     responsibilities: List[str] = Field(default_factory=list)
+    certifications: List[str] = Field(default_factory=list)
+    other_requirements: List[str] = Field(default_factory=list)
+    preferred_qualifications: List[str] = Field(default_factory=list)
+    description: Optional[str] = Field(default=None, description="Role summary")

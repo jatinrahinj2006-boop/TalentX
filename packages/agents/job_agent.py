@@ -50,6 +50,59 @@ def _heuristic_job_parse(jd_text: str, job_id: str) -> Dict[str, Any]:
             {"name": "Docker", "importance": "must", "weight": 1.0}
         ]
 
+    # Education requirements
+    edu_reqs = []
+    edu_section = re.search(r"Education Requirements:\s*\n((?:-[^\n]+\n?)+)", jd_text, re.IGNORECASE)
+    if edu_section:
+        for line in edu_section.group(1).splitlines():
+            item = line.replace("-", "").strip()
+            if item:
+                edu_reqs.append(item)
+    if not edu_reqs:
+        edu_reqs = ["Bachelor's degree in technical field"]
+
+    # Responsibilities
+    resps = []
+    resp_section = re.search(r"Responsibilities:\s*\n((?:-[^\n]+\n?)+)", jd_text, re.IGNORECASE)
+    if resp_section:
+        for line in resp_section.group(1).splitlines():
+            item = line.replace("-", "").strip()
+            if item:
+                resps.append(item)
+    if not resps:
+        resps = ["Develop and maintain software applications"]
+
+    # Certifications
+    certs = []
+    cert_section = re.search(r"Certifications:\s*\n((?:-[^\n]+\n?)+)", jd_text, re.IGNORECASE)
+    if cert_section:
+        for line in cert_section.group(1).splitlines():
+            item = line.replace("-", "").strip()
+            if item:
+                certs.append(item)
+
+    # Other Requirements
+    other_reqs = []
+    other_section = re.search(r"Other Requirements:\s*\n((?:-[^\n]+\n?)+)", jd_text, re.IGNORECASE)
+    if other_section:
+        for line in other_section.group(1).splitlines():
+            item = line.replace("-", "").strip()
+            if item:
+                other_reqs.append(item)
+
+    # Preferred Qualifications
+    pref_quals = []
+    pq_section = re.search(r"Preferred Qualifications:\s*\n((?:-[^\n]+\n?)+)", jd_text, re.IGNORECASE)
+    if pq_section:
+        for line in pq_section.group(1).splitlines():
+            item = line.replace("-", "").strip()
+            if item:
+                pref_quals.append(item)
+
+    # Description summary
+    desc_match = re.search(r"(?:Job Description / Summary|Summary):\s*\n([^\n]+(?:\n[^\n]+)*?)(?=\n\w+:|$)", jd_text, re.IGNORECASE)
+    desc_text = desc_match.group(1).strip() if desc_match else None
+
     return {
         "job_id": job_id,
         "title": title,
@@ -57,8 +110,12 @@ def _heuristic_job_parse(jd_text: str, job_id: str) -> Dict[str, Any]:
         "minimum_experience_months": exp_months,
         "required_skills": req_skills,
         "preferred_skills": pref_skills,
-        "education_requirements": ["Bachelor's degree in technical field"],
-        "responsibilities": ["Develop and maintain software applications"]
+        "education_requirements": edu_reqs,
+        "responsibilities": resps,
+        "certifications": certs,
+        "other_requirements": other_reqs,
+        "preferred_qualifications": pref_quals,
+        "description": desc_text,
     }
 
 def parse_job_description(jd_text_or_path: str, job_id: str = "J001") -> ExtractedJob:

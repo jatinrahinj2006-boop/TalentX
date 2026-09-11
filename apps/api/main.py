@@ -121,7 +121,12 @@ async def upload_job(file: UploadFile = File(...)):
         "minimum_experience_months": job.minimum_experience_months,
         "required_skills": [s.model_dump() for s in job.required_skills],
         "preferred_skills": [s.model_dump() for s in job.preferred_skills],
+        "education_requirements": getattr(job, "education_requirements", []),
         "responsibilities": job.responsibilities,
+        "certifications": getattr(job, "certifications", []),
+        "other_requirements": getattr(job, "other_requirements", []),
+        "preferred_qualifications": getattr(job, "preferred_qualifications", []),
+        "description": getattr(job, "description", ""),
         "file_path": dest,
         "candidate_count": 0,
     }
@@ -131,30 +136,101 @@ async def upload_job(file: UploadFile = File(...)):
 
 class JobTextCreateRequest(BaseModel):
     title: str
-    description: str
+    description: Optional[str] = ""
     domain: Optional[str] = "Software Engineering"
     minimum_experience_months: Optional[int] = 0
+    required_skills: Optional[List[str]] = None
+    preferred_skills: Optional[List[str]] = None
+    education_requirements: Optional[List[str]] = None
+    responsibilities: Optional[List[str]] = None
+    certifications: Optional[List[str]] = None
+    other_requirements: Optional[List[str]] = None
+    preferred_qualifications: Optional[List[str]] = None
 
 @router.post("/jobs/text")
 async def create_job_from_text(req: JobTextCreateRequest):
     job_id = f"J{len(_jobs)+1:03d}"
     filename = f"{job_id}_job.txt"
     dest = os.path.join(UPLOAD_DIR, filename)
+
+    content_parts = [
+        f"Title: {req.title}",
+        f"Domain: {req.domain}",
+        f"Minimum Experience: {req.minimum_experience_months} months",
+    ]
+    if req.description:
+        content_parts.append(f"\nJob Description / Summary:\n{req.description}")
+    if req.required_skills:
+        valid_req = [s.strip() for s in req.required_skills if s.strip()]
+        if valid_req:
+            content_parts.append("\nRequired Skills:\n" + "\n".join(f"- {s}" for s in valid_req))
+    if req.preferred_skills:
+        valid_pref = [s.strip() for s in req.preferred_skills if s.strip()]
+        if valid_pref:
+            content_parts.append("\nPreferred Skills:\n" + "\n".join(f"- {s}" for s in valid_pref))
+    if req.education_requirements:
+        valid_edu = [s.strip() for s in req.education_requirements if s.strip()]
+        if valid_edu:
+            content_parts.append("\nEducation Requirements:\n" + "\n".join(f"- {s}" for s in valid_edu))
+    if req.responsibilities:
+        valid_resp = [s.strip() for s in req.responsibilities if s.strip()]
+        if valid_resp:
+            content_parts.append("\nResponsibilities:\n" + "\n".join(f"- {s}" for s in valid_resp))
+    if req.certifications:
+        valid_certs = [s.strip() for s in req.certifications if s.strip()]
+        if valid_certs:
+            content_parts.append("\nCertifications:\n" + "\n".join(f"- {s}" for s in valid_certs))
+    if req.other_requirements:
+        valid_others = [s.strip() for s in req.other_requirements if s.strip()]
+        if valid_others:
+            content_parts.append("\nOther Requirements:\n" + "\n".join(f"- {s}" for s in valid_others))
+    if req.preferred_qualifications:
+        valid_pq = [s.strip() for s in req.preferred_qualifications if s.strip()]
+        if valid_pq:
+            content_parts.append("\nPreferred Qualifications:\n" + "\n".join(f"- {s}" for s in valid_pq))
+
     with open(dest, "w", encoding="utf-8") as f:
-        f.write(f"Title: {req.title}\n")
-        f.write(f"Domain: {req.domain}\n")
-        f.write(f"Minimum Experience: {req.minimum_experience_months} months\n\n")
-        f.write(req.description)
+        f.write("\n".join(content_parts) + "\n")
 
     job = parse_job_description(dest, job_id=job_id)
+
+    req_skills_formatted = []
+    if req.required_skills:
+        for s in req.required_skills:
+            s_clean = s.strip()
+            if s_clean:
+                req_skills_formatted.append({"name": s_clean, "importance": "must", "weight": 1.0})
+    if not req_skills_formatted:
+        req_skills_formatted = [s.model_dump() for s in job.required_skills]
+
+    pref_skills_formatted = []
+    if req.preferred_skills:
+        for s in req.preferred_skills:
+            s_clean = s.strip()
+            if s_clean:
+                pref_skills_formatted.append({"name": s_clean, "importance": "preferred", "weight": 0.5})
+    if not pref_skills_formatted:
+        pref_skills_formatted = [s.model_dump() for s in job.preferred_skills]
+
+    clean_edu = [s.strip() for s in req.education_requirements if s.strip()] if req.education_requirements else job.education_requirements
+    clean_resp = [s.strip() for s in req.responsibilities if s.strip()] if req.responsibilities else job.responsibilities
+    clean_certs = [s.strip() for s in req.certifications if s.strip()] if req.certifications else getattr(job, "certifications", [])
+    clean_others = [s.strip() for s in req.other_requirements if s.strip()] if req.other_requirements else getattr(job, "other_requirements", [])
+    clean_pref_q = [s.strip() for s in req.preferred_qualifications if s.strip()] if req.preferred_qualifications else getattr(job, "preferred_qualifications", [])
+
     _jobs[job_id] = {
         "job_id": job.job_id,
-        "title": job.title or req.title,
-        "domain": job.domain or req.domain,
-        "minimum_experience_months": job.minimum_experience_months or req.minimum_experience_months,
-        "required_skills": [s.model_dump() for s in job.required_skills],
-        "preferred_skills": [s.model_dump() for s in job.preferred_skills],
-        "responsibilities": job.responsibilities,
+        "title": req.title or job.title,
+        "domain": req.domain or job.domain,
+        "minimum_experience_months": req.minimum_experience_months if req.minimum_experience_months is not None else job.minimum_experience_months,
+        "required_skills": req_skills_formatted,
+        "preferred_skills": pref_skills_formatted,
+        "education_requirements": clean_edu,
+        "responsibilities": clean_resp,
+        "certifications": clean_certs,
+        "other_requirements": clean_others,
+        "preferred_qualifications": clean_pref_q,
+        "description": req.description or "",
         "file_path": dest,
         "candidate_count": 0,
     }
