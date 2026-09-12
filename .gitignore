@@ -68,3 +68,8 @@ Icon
 .idea/
 *.swp
 *.swo
+
+# Databases
+*.db
+db/*.db
+
